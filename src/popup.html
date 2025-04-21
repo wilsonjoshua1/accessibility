@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      width: 250px;
+      padding: 15px;
+      font-family: Arial, sans-serif;
+    }
+    .control-group {
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #eee;
+    }
+    button {
+      padding: 8px 12px;
+      margin: 5px;
+      cursor: pointer;
+      background: #0066cc;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+    h3 {
+      color: #0066cc;
+      margin-top: 0;
+    }
+    .size-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #sizeDisplay {
+      font-weight: bold;
+      min-width: 40px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h3>Accessibility Controls</h3>
+  
+  <div class="control-group">
+    <h4>Text Size</h4>
+    <div class="size-controls">
+      <button id="decreaseText">-</button>
+      <span id="sizeDisplay">100%</span>
+      <button id="increaseText">+</button>
+    </div>
+  </div>
+  
+  <div class="control-group">
+    <h4>Display</h4>
+    <button id="toggleContrast">Toggle Contrast</button>
+    <button id="toggleDyslexia">Dyslexia Font</button>
+  </div>
+  
+  <div class="control-group">
+    <button id="resetAll">Reset All</button>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>

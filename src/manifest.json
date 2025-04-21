@@ -1,0 +1,17 @@
+{
+    "manifest_version": 3,
+    "name": "Ben & Jerry's Accessibility Enhancer",
+    "version": "1.0",
+    "description": "Improves accessibility on benjerry.com",
+    "content_scripts": [{
+      "matches": ["https://www.benjerry.com/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_end"
+    }],
+    "permissions": ["activeTab", "scripting", "storage"],
+    "host_permissions": ["https://www.benjerry.com/*"],
+    "action": {
+      "default_popup": "popup.html"
+      
+    }

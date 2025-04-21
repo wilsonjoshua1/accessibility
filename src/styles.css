@@ -1,0 +1,37 @@
+/* High contrast mode */
+.high-contrast {
+    background-color: #000 !important;
+    color: #fff !important;
+  }
+  
+  .high-contrast a {
+    color: #0066cc !important;
+    text-decoration: underline !important;
+  }
+  
+  /* Dyslexia-friendly font */
+  .dyslexia-mode {
+    font-family: "Comic Sans MS", "OpenDyslexic", sans-serif !important;
+    line-height: 1.8 !important;
+    word-spacing: 2px !important;
+  }
+  
+  /* Focus styles for keyboard navigation */
+  :focus {
+    outline: 3px solid #0066cc !important;
+    outline-offset: 2px !important;
+  }
+  
+  /* Ensure text scaling works on form elements */
+  input, 
+  textarea, 
+  select, 
+  button {
+    font-size: inherit !important;
+  }
+  
+  /* Prevent icon fonts from scaling */
+  [class*="icon-"]::before,
+  [class^="icon-"]::before {
+    font-size: initial !important;
+  }
