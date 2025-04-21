@@ -2,61 +2,152 @@
 <html>
 <head>
   <style>
+    :root {
+      --primary-color: #0066cc;
+      --primary-hover: #004d99;
+      --secondary-color: #f0f0f0;
+      --text-color: #333;
+      --border-color: #ddd;
+      --success-color: #28a745;
+    }
+    
     body {
-      width: 250px;
+      width: 280px;
+      padding: 0;
+      margin: 0;
+      font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      color: var(--text-color);
+      background-color: white;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .header {
+      background-color: var(--primary-color);
+      color: white;
       padding: 15px;
-      font-family: Arial, sans-serif;
+      margin-bottom: 10px;
     }
+    
+    h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
     .control-group {
-      margin-bottom: 15px;
-      padding-bottom: 15px;
-      border-bottom: 1px solid #eee;
+      padding: 0 15px 15px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
     }
+    
+    .control-group:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+    
+    h4 {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--primary-color);
+    }
+    
     button {
       padding: 8px 12px;
-      margin: 5px;
+      margin: 3px 0;
       cursor: pointer;
-      background: #0066cc;
+      background: var(--primary-color);
       color: white;
       border: none;
       border-radius: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      width: 100%;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    h3 {
-      color: #0066cc;
-      margin-top: 0;
+    
+    button:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
     }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
     .size-controls {
       display: flex;
       align-items: center;
       gap: 10px;
+      margin: 10px 0;
     }
+    
+    .size-btn {
+      flex: 1;
+      width: auto;
+      padding: 6px 0;
+    }
+    
     #sizeDisplay {
       font-weight: bold;
       min-width: 40px;
       text-align: center;
+      font-size: 14px;
+    }
+    
+    .icon {
+      margin-right: 8px;
+      font-size: 14px;
+    }
+    
+    .footer {
+      padding: 10px 15px;
+      font-size: 11px;
+      color: #666;
+      text-align: center;
+      background-color: var(--secondary-color);
     }
   </style>
 </head>
 <body>
-  <h3>Accessibility Controls</h3>
+  <div class="header">
+    <h3>Accessibility Controls</h3>
+  </div>
   
   <div class="control-group">
     <h4>Text Size</h4>
     <div class="size-controls">
-      <button id="decreaseText">-</button>
+      <button id="decreaseText" class="size-btn">
+        <span class="icon"></span> Decrease
+      </button>
       <span id="sizeDisplay">100%</span>
-      <button id="increaseText">+</button>
+      <button id="increaseText" class="size-btn">
+        <span class="icon"></span> Increase
+      </button>
     </div>
   </div>
   
   <div class="control-group">
-    <h4>Display</h4>
-    <button id="toggleContrast">Toggle Contrast</button>
-    <button id="toggleDyslexia">Dyslexia Font</button>
+    <h4>Display Options</h4>
+    <button id="toggleContrast">
+      <span class="icon"></span> Toggle Contrast
+    </button>
+    <button id="toggleDyslexia">
+      <span class="icon"></span> Dyslexia Mode
+    </button>
   </div>
   
   <div class="control-group">
-    <button id="resetAll">Reset All</button>
+    <button id="resetAll" style="background-color: #666;">
+      <span class="icon"></span> Reset All
+    </button>
+  </div>
+  
+  <div class="footer">
+    Ben & Jerry's Accessibility Tool
   </div>
   
   <script src="popup.js"></script>
