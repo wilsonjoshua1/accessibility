@@ -29,7 +29,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({success: true});
         break;
       case 'toggleDyslexia':
-        document.body.classList.toggle('dyslexia-mode');
+        const isDyslexiaModeActive = document.body.classList.toggle('dyslexia-mode');
+        
+        // Always clean up first to ensure we start fresh
+        unboldText();
+        
+        if (isDyslexiaModeActive) {
+          boldFirstHalfOfWords();
+        }
+        
         sendResponse({success: true});
         break;
       case 'resetAll':
@@ -42,7 +50,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   } catch (error) {
     sendResponse({success: false, error: error.message});
   }
-  return false;
+  return true;
 });
 
 // Apply current font size to ALL text elements
@@ -55,7 +63,6 @@ function applyFontSize() {
       font-size: ${currentFontSize * 100}% !important;
     }
     
-    /* Special handling for headings to maintain hierarchy */
     h1 { font-size: ${currentFontSize * 2.5}em !important; }
     h2 { font-size: ${currentFontSize * 2}em !important; }
     h3 { font-size: ${currentFontSize * 1.75}em !important; }
@@ -69,9 +76,136 @@ function applyFontSize() {
   document.head.appendChild(style);
 }
 
-// Reset all changes
+// Improved function to bold first half of each word
+function boldFirstHalfOfWords() {
+  // Start with a clean state
+  unboldText();
+
+  // Keep track of processed nodes to avoid reprocessing
+  const processedNodes = new WeakSet();
+  
+  // Wikipedia specific: Focus on main content
+  const contentAreas = [
+    document.getElementById('mw-content-text'),
+    document.getElementById('firstHeading')
+  ].filter(Boolean);
+  
+  if (contentAreas.length === 0) {
+    console.warn('Could not find main content areas on Wikipedia');
+    contentAreas.push(document.body); // Fallback to entire body
+  }
+  
+  // Process each content area
+  for (const contentArea of contentAreas) {
+    const textNodes = [];
+    const walker = document.createTreeWalker(
+      contentArea,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode: function(node) {
+          // Skip if already processed or if in ignored elements
+          if (processedNodes.has(node) ||
+              node.parentNode.nodeName === 'SCRIPT' || 
+              node.parentNode.nodeName === 'STYLE' ||
+              node.parentNode.nodeName === 'NOSCRIPT' ||
+              node.parentNode.nodeName === 'CODE' ||
+              node.parentNode.nodeName === 'PRE' ||
+              node.parentNode.closest('.mw-editsection') || // Skip edit section links
+              node.nodeValue.trim().length === 0) {
+            return NodeFilter.FILTER_REJECT;
+          }
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      },
+      false
+    );
+
+    let node;
+    while (node = walker.nextNode()) {
+      textNodes.push(node);
+    }
+
+    // Process each text node
+    for (const textNode of textNodes) {
+      // Skip if already processed (additional safety check)
+      if (processedNodes.has(textNode)) continue;
+      
+      const text = textNode.nodeValue;
+      if (!text || !text.trim()) continue;
+      
+      // Split the text into words and spaces
+      const parts = text.split(/(\s+)/);
+      const fragment = document.createDocumentFragment();
+      
+      for (const part of parts) {
+        if (!part.trim()) {
+          // Preserve whitespace as is
+          fragment.appendChild(document.createTextNode(part));
+          continue;
+        }
+        
+        // This is a word - split it in half
+        const halfLength = Math.ceil(part.length / 2);
+        const firstHalf = part.substring(0, halfLength);
+        const secondHalf = part.substring(halfLength);
+        
+        // Create a bold span for the first half
+        const boldSpan = document.createElement('span');
+        boldSpan.className = 'first-half-text';
+        boldSpan.textContent = firstHalf;
+        
+        // Append first half (bold) and second half (normal)
+        fragment.appendChild(boldSpan);
+        
+        if (secondHalf) {
+          fragment.appendChild(document.createTextNode(secondHalf));
+        }
+      }
+      
+      // Mark this node as processed before we replace it
+      processedNodes.add(textNode);
+      
+      // Replace the original text node with our fragment
+      if (textNode.parentNode) {
+        textNode.parentNode.replaceChild(fragment, textNode);
+      }
+    }
+  }
+}
+
+// More thorough unboldText function
+function unboldText() {
+  // First, collect all the spans to avoid modification during iteration
+  const spans = Array.from(document.querySelectorAll('.first-half-text'));
+  
+  for (const span of spans) {
+    if (span && span.parentNode) {
+      // Create a text node with the span's content
+      const textNode = document.createTextNode(span.textContent);
+      
+      // Insert the text node before the span
+      span.parentNode.insertBefore(textNode, span);
+      
+      // Remove the span
+      span.parentNode.removeChild(span);
+    }
+  }
+  
+  // Look for any spans we might have missed (failsafe)
+  const remainingSpans = document.querySelectorAll('.first-half-text');
+  if (remainingSpans.length > 0) {
+    console.warn(`Found ${remainingSpans.length} remaining spans after cleanup`);
+    // Try one more time with direct removal
+    remainingSpans.forEach(span => {
+      if (span && span.parentNode) {
+        span.parentNode.removeChild(span);
+      }
+    });
+  }
+}
+
 function resetStyles() {
-  currentFontSize = 1.0; // Reset to default
+  currentFontSize = 1.0;
   const styles = [
     'accessibility-text-size',
     'accessibility-contrast'
@@ -83,6 +217,8 @@ function resetStyles() {
   });
   
   document.body.classList.remove('high-contrast', 'dyslexia-mode');
+  unboldText();
 }
 
-console.log('Ben & Jerry\'s accessibility enhancer loaded');
+console.log('Texas A&M Wikipedia accessibility enhancer loaded');
+

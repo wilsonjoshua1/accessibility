@@ -1,18 +1,22 @@
 {
-    "manifest_version": 3,
-    "name": "Ben & Jerry's Accessibility Enhancer",
-    "version": "1.0",
-    "description": "Improves accessibility on benjerry.com",
-    "content_scripts": [{
-      "matches": ["https://www.benjerry.com/*"],
-      "js": ["content.js"],
-      "css": ["styles.css"],
-      "run_at": "document_end"
-    }],
-    "permissions": ["activeTab", "scripting", "storage"],
-    "host_permissions": ["https://www.benjerry.com/*"],
-    "action": {
-      "default_popup": "popup.html"
-      
-    }
-  }
+  "manifest_version": 3,
+  "name": "Wikipedia Accessibility Enhancer",
+  "version": "1.0",
+  "description": "Improves accessibility on Texas A&M University Wikipedia page",
+  "content_scripts": [{
+    "matches": ["https://en.wikipedia.org/wiki/Texas_A%26M_University*"],
+    "js": ["content.js"],
+    "css": ["styles.css"],
+    "run_at": "document_end",
+    "all_frames": true
+  }],
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": ["https://en.wikipedia.org/wiki/Texas_A%26M_University*"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "web_accessible_resources": [{
+    "resources": ["styles.css"],
+    "matches": ["https://en.wikipedia.org/*"]
+  }]
+}
