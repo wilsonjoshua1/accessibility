@@ -7,20 +7,22 @@ document.write = function(content) {
   return null;
 };
 
-// Current font size multiplier (default 1.0 = 100%)
 let currentFontSize = 1.0;
 
-// Message handler for popup commands
+// Ensure SVG filters are in the DOM immediately
+ensureSVGFilters();
+
+// Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   try {
     switch(request.action) {
       case 'increaseTextSize':
-        currentFontSize = Math.min(currentFontSize + 0.05, 2.0); // Max 200%
+        currentFontSize = Math.min(currentFontSize + 0.05, 2.0);
         applyFontSize();
         sendResponse({success: true, size: currentFontSize});
         break;
       case 'decreaseTextSize':
-        currentFontSize = Math.max(currentFontSize - 0.05, 0.5); // Min 50%
+        currentFontSize = Math.max(currentFontSize - 0.05, 0.5);
         applyFontSize();
         sendResponse({success: true, size: currentFontSize});
         break;
@@ -29,17 +31,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({success: true});
         break;
       case 'toggleDyslexia':
-        const isDyslexiaModeActive = document.body.classList.toggle('dyslexia-mode');
-        
-        // Always clean up first to ensure we start fresh
+        const dys = document.body.classList.toggle('dyslexia-mode');
         unboldText();
-        
-        if (isDyslexiaModeActive) {
-          boldFirstHalfOfWords();
-        }
-        
+        if (dys) boldFirstHalfOfWords();
         sendResponse({success: true});
         break;
+
+      // Color filter
+      case 'setColorFilter':
+        applyColorFilter(request.filter);
+        sendResponse({success: true});
+        break;
+      case 'resetColorFilter':
+        resetColorFilter();
+        sendResponse({success: true});
+        break;
+
       case 'toggleWikiControls':
         // Target the appearance header element
         const appearanceHeader = document.querySelector('.vector-pinnable-header[data-feature-name="appearance-pinned"]');
@@ -86,6 +93,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         
         sendResponse({success: true, isHidden: newState});
         break;
+         // Custom colors
+      case 'setCustomColors':
+        applyCustomColors(request.textColor, request.bgColor);
+        sendResponse({success: true});
+        break;
+      case 'resetCustomColors':
+        resetCustomColors();
+        sendResponse({success: true});
+        break;
       case 'resetAll':
         resetStyles();
         sendResponse({success: true});
@@ -101,13 +117,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       default:
         sendResponse({success: false, error: 'Unknown action'});
     }
-  } catch (error) {
-    sendResponse({success: false, error: error.message});
+  } catch (e) {
+    sendResponse({success: false, error: e.message});
   }
   return true;
 });
 
-// Apply current font size to ALL text elements
+
+// --- Existing helper functions ---
+
 function applyFontSize() {
   const style = document.createElement('style');
   style.id = 'accessibility-text-size';
@@ -130,42 +148,25 @@ function applyFontSize() {
   document.head.appendChild(style);
 }
 
-// Improved function to bold first half of each word
 function boldFirstHalfOfWords() {
-  // Start with a clean state
   unboldText();
-
-  // Keep track of processed nodes to avoid reprocessing
   const processedNodes = new WeakSet();
-  
-  // Wikipedia specific: Focus on main content
   const contentAreas = [
     document.getElementById('mw-content-text'),
     document.getElementById('firstHeading')
   ].filter(Boolean);
-  
-  if (contentAreas.length === 0) {
-    console.warn('Could not find main content areas on Wikipedia');
-    contentAreas.push(document.body); // Fallback to entire body
-  }
-  
-  // Process each content area
+  if (contentAreas.length === 0) contentAreas.push(document.body);
+
   for (const contentArea of contentAreas) {
-    const textNodes = [];
     const walker = document.createTreeWalker(
       contentArea,
       NodeFilter.SHOW_TEXT,
       {
-        acceptNode: function(node) {
-          // Skip if already processed or if in ignored elements
+        acceptNode: node => {
           if (processedNodes.has(node) ||
-              node.parentNode.nodeName === 'SCRIPT' || 
-              node.parentNode.nodeName === 'STYLE' ||
-              node.parentNode.nodeName === 'NOSCRIPT' ||
-              node.parentNode.nodeName === 'CODE' ||
-              node.parentNode.nodeName === 'PRE' ||
-              node.parentNode.closest('.mw-editsection') || // Skip edit section links
-              node.nodeValue.trim().length === 0) {
+              !node.nodeValue.trim() ||
+              ['SCRIPT','STYLE','NOSCRIPT','CODE','PRE'].includes(node.parentNode.nodeName) ||
+              node.parentNode.closest('.mw-editsection')) {
             return NodeFilter.FILTER_REJECT;
           }
           return NodeFilter.FILTER_ACCEPT;
@@ -173,104 +174,45 @@ function boldFirstHalfOfWords() {
       },
       false
     );
-
     let node;
     while (node = walker.nextNode()) {
-      textNodes.push(node);
-    }
-
-    // Process each text node
-    for (const textNode of textNodes) {
-      // Skip if already processed (additional safety check)
-      if (processedNodes.has(textNode)) continue;
-      
-      const text = textNode.nodeValue;
-      if (!text || !text.trim()) continue;
-      
-      // Split the text into words and spaces
+      processedNodes.add(node);
+      const text = node.nodeValue;
       const parts = text.split(/(\s+)/);
       const fragment = document.createDocumentFragment();
-      
       for (const part of parts) {
         if (!part.trim()) {
-          // Preserve whitespace as is
           fragment.appendChild(document.createTextNode(part));
-          continue;
-        }
-        
-        // This is a word - split it in half
-        const halfLength = Math.ceil(part.length / 2);
-        const firstHalf = part.substring(0, halfLength);
-        const secondHalf = part.substring(halfLength);
-        
-        // Create a bold span for the first half
-        const boldSpan = document.createElement('span');
-        boldSpan.className = 'first-half-text';
-        boldSpan.textContent = firstHalf;
-        
-        // Append first half (bold) and second half (normal)
-        fragment.appendChild(boldSpan);
-        
-        if (secondHalf) {
-          fragment.appendChild(document.createTextNode(secondHalf));
+        } else {
+          const half = Math.ceil(part.length/2);
+          const b = document.createElement('span');
+          b.className = 'first-half-text';
+          b.textContent = part.slice(0, half);
+          fragment.appendChild(b);
+          fragment.appendChild(document.createTextNode(part.slice(half)));
         }
       }
-      
-      // Mark this node as processed before we replace it
-      processedNodes.add(textNode);
-      
-      // Replace the original text node with our fragment
-      if (textNode.parentNode) {
-        textNode.parentNode.replaceChild(fragment, textNode);
-      }
+      node.parentNode.replaceChild(fragment, node);
     }
   }
 }
 
-// More thorough unboldText function
 function unboldText() {
-  // First, collect all the spans to avoid modification during iteration
-  const spans = Array.from(document.querySelectorAll('.first-half-text'));
-  
-  for (const span of spans) {
-    if (span && span.parentNode) {
-      // Create a text node with the span's content
-      const textNode = document.createTextNode(span.textContent);
-      
-      // Insert the text node before the span
-      span.parentNode.insertBefore(textNode, span);
-      
-      // Remove the span
-      span.parentNode.removeChild(span);
-    }
-  }
-  
-  // Look for any spans we might have missed (failsafe)
-  const remainingSpans = document.querySelectorAll('.first-half-text');
-  if (remainingSpans.length > 0) {
-    console.warn(`Found ${remainingSpans.length} remaining spans after cleanup`);
-    // Try one more time with direct removal
-    remainingSpans.forEach(span => {
-      if (span && span.parentNode) {
-        span.parentNode.removeChild(span);
-      }
-    });
-  }
+  document.querySelectorAll('.first-half-text').forEach(span => {
+    const txt = document.createTextNode(span.textContent);
+    span.parentNode.replaceChild(txt, span);
+  });
 }
 
 function resetStyles() {
   currentFontSize = 1.0;
-  const styles = [
-    'accessibility-text-size',
-    'accessibility-contrast'
-  ];
-  
-  styles.forEach(id => {
-    const element = document.getElementById(id);
-    if (element) element.remove();
+  ['accessibility-text-size'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.remove();
   });
-  
   document.body.classList.remove('high-contrast', 'dyslexia-mode');
+  resetColorFilter();
+  resetCustomColors();
   unboldText();
   
   // Show wiki appearance controls again if they were hidden
@@ -347,7 +289,82 @@ function applyStoredPreferences() {
   }
 }
 
+
 // Call this function on load
 applyStoredPreferences();
 
 console.log('Texas A&M Wikipedia accessibility enhancer loaded');
+
+// --- New helper functions for color filters & custom colors ---
+
+// --- New: SVG filters injection ---
+function ensureSVGFilters() {
+    if (document.getElementById('accessibility-svg-filters')) return;
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.id = 'accessibility-svg-filters';
+    svg.setAttribute('style', 'position:absolute;width:0;height:0;');
+    svg.innerHTML = `
+      <defs>
+        <filter id="protanopia-filter">
+          <feColorMatrix type="matrix"
+            values="0.567 0.433 0 0 0
+                    0.558 0.442 0 0 0
+                    0 0.242 0.758 0 0
+                    0 0 0 1 0"/>
+        </filter>
+        <filter id="deuteranopia-filter">
+          <feColorMatrix type="matrix"
+            values="0.625 0.375 0 0 0
+                    0.7 0.3 0 0 0
+                    0 0.3 0.7 0 0
+                    0 0 0 1 0"/>
+        </filter>
+        <filter id="tritanopia-filter">
+          <feColorMatrix type="matrix"
+            values="0.95 0.05 0 0 0
+                    0 0.433 0.567 0 0
+                    0 0.475 0.525 0 0
+                    0 0 0 1 0"/>
+        </filter>
+      </defs>`;
+    document.body.appendChild(svg);
+  }
+  
+  // --- Apply / Reset Color Filters ---
+  function applyColorFilter(filter) {
+    ensureSVGFilters();
+    resetColorFilter();
+    if (filter && filter !== 'none') {
+      document.body.classList.add(`color-blind-${filter}`);
+      document.documentElement.classList.add(`color-blind-${filter}`);
+    }
+  }
+  
+  function resetColorFilter() {
+    ['protanopia', 'deuteranopia', 'tritanopia'].forEach(f => {
+      document.body.classList.remove(`color-blind-${f}`);
+      document.documentElement.classList.remove(`color-blind-${f}`);
+    });
+  }
+  
+  // --- Apply / Reset Custom Colors ---
+  function applyCustomColors(textColor, bgColor) {
+    resetCustomColors();
+    const style = document.createElement('style');
+    style.id = 'custom-colors';
+    style.textContent = `
+      body, body * {
+        background-color: ${bgColor} !important;
+        color: ${textColor} !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  
+  function resetCustomColors() {
+    const el = document.getElementById('custom-colors');
+    if (el) el.remove();
+  }
+  
+  console.log('Accessibility enhancer with color filters loaded');
