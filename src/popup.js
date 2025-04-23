@@ -1,140 +1,51 @@
-document.addEventListener('DOMContentLoaded', function() {
-  const buttons = {
-    increaseText: {action: 'increaseTextSize', display: document.getElementById('sizeDisplay')},
-    decreaseText: {action: 'decreaseTextSize', display: document.getElementById('sizeDisplay')},
-    toggleContrast: {action: 'toggleContrast'},
-    toggleDyslexia: {action: 'toggleDyslexia'},
-    resetAll: {action: 'resetAll'}
+document.addEventListener('DOMContentLoaded', () => {
+  const sendCmd = async (action, payload = {}) => {
+    const [tab] = await chrome.tabs.query({ active:true, currentWindow:true });
+    try {
+      return await chrome.tabs.sendMessage(tab.id, { action, ...payload });
+    } catch {
+      await chrome.scripting.executeScript({ target:{tabId:tab.id}, files:['content.js'] });
+      await chrome.scripting.insertCSS({ target:{tabId:tab.id}, files:['styles.css'] });
+      return await chrome.tabs.sendMessage(tab.id, { action, ...payload });
+    }
   };
 
-  Object.entries(buttons).forEach(([id, config]) => {
-    const button = document.getElementById(id);
-    if (!button) return;
-    
-    button.addEventListener('click', async () => {
-      try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (!tab.url.includes('en.wikipedia.org/wiki/Texas_A%26M_University')) {
-          alert('Please use this on the Texas A&M University Wikipedia page');
-          return;
-        }
-
-        let response;
-        try {
-          response = await chrome.tabs.sendMessage(tab.id, { action: config.action });
-        } catch (e) {
-          await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            files: ['content.js']
-          });
-          await chrome.scripting.insertCSS({
-            target: { tabId: tab.id },
-            files: ['styles.css']
-          });
-          response = await chrome.tabs.sendMessage(tab.id, { action: config.action });
-        }
-
-        if (response?.success && config.display) {
-          config.display.textContent = `${Math.round(response.size * 100)}%`;
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('Failed to execute command. Please refresh the page and try again.');
-      }
+  // Text size + display buttons
+  const mapping = {
+    increaseText: ['increaseTextSize','sizeDisplay'],
+    decreaseText: ['decreaseTextSize','sizeDisplay'],
+    toggleContrast: ['toggleContrast'],
+    toggleDyslexia: ['toggleDyslexia'],
+    resetAll: ['resetAll']
+  };
+  Object.entries(mapping).forEach(([id, cfg]) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+      const res = await sendCmd(cfg[0]);
+      if (res?.size && cfg[1]) document.getElementById(cfg[1]).textContent = `${Math.round(res.size*100)}%`;
     });
   });
 
-  // Color filter select handler
-  const colorFilterSelect = document.getElementById('colorFilterSelect');
-  if (colorFilterSelect) {
-    colorFilterSelect.addEventListener('change', async () => {
-      const filter = colorFilterSelect.value;
-      const action = filter === 'none' ? 'resetColorFilter' : 'setColorFilter';
-      try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        let response;
-        try {
-          response = await chrome.tabs.sendMessage(tab.id, { action, filter });
-        } catch (e) {
-          await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            files: ['content.js']
-          });
-          await chrome.scripting.insertCSS({
-            target: { tabId: tab.id },
-            files: ['styles.css']
-          });
-          response = await chrome.tabs.sendMessage(tab.id, { action, filter });
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('Failed to apply color filter. Please refresh the page and try again.');
-      }
-    });
-  }
+  // Color filter
+  document.getElementById('colorFilterSelect').addEventListener('change', async e => {
+    const filter = e.target.value;
+    await sendCmd(filter==='none'?'resetColorFilter':'setColorFilter', { filter });
+  });
 
-  // Custom colors apply handler
-  const applyColorsBtn = document.getElementById('applyColors');
-  if (applyColorsBtn) {
-    applyColorsBtn.addEventListener('click', async () => {
-      const textColor = document.getElementById('textColorInput').value;
-      const bgColor = document.getElementById('bgColorInput').value;
-      try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        let response;
-        try {
-          response = await chrome.tabs.sendMessage(tab.id, {
-            action: 'setCustomColors',
-            textColor,
-            bgColor
-          });
-        } catch (e) {
-          await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            files: ['content.js']
-          });
-          await chrome.scripting.insertCSS({
-            target: { tabId: tab.id },
-            files: ['styles.css']
-          });
-          response = await chrome.tabs.sendMessage(tab.id, {
-            action: 'setCustomColors',
-            textColor,
-            bgColor
-          });
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('Failed to apply custom colors. Please refresh the page and try again.');
-      }
-    });
-  }
+  // Custom colors
+  document.getElementById('applyColors').addEventListener('click', async () => {
+    const textColor = document.getElementById('textColorInput').value;
+    const bgColor = document.getElementById('bgColorInput').value;
+    await sendCmd('setCustomColors', { textColor, bgColor });
+  });
+  document.getElementById('resetColors').addEventListener('click', async () => {
+    await sendCmd('resetCustomColors');
+  });
 
-  // Reset custom colors handler
-  const resetColorsBtn = document.getElementById('resetColors');
-  if (resetColorsBtn) {
-    resetColorsBtn.addEventListener('click', async () => {
-      try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        let response;
-        try {
-          response = await chrome.tabs.sendMessage(tab.id, { action: 'resetCustomColors' });
-        } catch (e) {
-          await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            files: ['content.js']
-          });
-          await chrome.scripting.insertCSS({
-            target: { tabId: tab.id },
-            files: ['styles.css']
-          });
-          response = await chrome.tabs.sendMessage(tab.id, { action: 'resetCustomColors' });
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('Failed to reset custom colors. Please refresh the page and try again.');
-      }
-    });
-  }
-
+  // **New** Line Focus toggle
+  document.getElementById('lineFocusSelect').addEventListener('change', async e => {
+    const on = e.target.value === 'on';
+    await sendCmd(on ? 'enableLineFocus' : 'disableLineFocus');
+  });
 });
