@@ -40,9 +40,63 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         
         sendResponse({success: true});
         break;
+      case 'toggleWikiControls':
+        // Target the appearance header element
+        const appearanceHeader = document.querySelector('.vector-pinnable-header[data-feature-name="appearance-pinned"]');
+        // Target the TOC header with the exact attributes
+        const tocHeader = document.querySelector('.vector-pinnable-header.vector-toc-pinnable-header[data-feature-name="toc-pinned"][data-pinnable-element-id="vector-toc"]');
+        // Target the entire TOC list
+        const tocList = document.querySelector('#mw-panel-toc-list');
+        // Target the header container
+        const headerContainer = document.querySelector('.vector-header-container');
+        
+        // Default is visible (false), so we toggle the opposite of current state
+        const currentState = localStorage.getItem('tamWikiHideControls') === 'true';
+        const newState = !currentState;
+        const newDisplayValue = newState ? 'none' : '';
+        
+        // Handle appearance panel
+        if (appearanceHeader) {
+          appearanceHeader.style.display = newDisplayValue;
+          
+          // Also toggle all child elements to ensure complete visibility change
+          const appearanceContainers = document.querySelectorAll('#vector-appearance-pinned-container, #vector-appearance-unpinned-container');
+          appearanceContainers.forEach(container => {
+            if (container) container.style.display = newDisplayValue;
+          });
+        }
+        
+        // Handle TOC header with very specific selector
+        if (tocHeader) {
+          tocHeader.style.display = newDisplayValue;
+        }
+        
+        // Handle entire TOC list
+        if (tocList) {
+          tocList.style.display = newDisplayValue;
+        }
+        
+        // Handle header container
+        if (headerContainer) {
+          headerContainer.style.display = newDisplayValue;
+        }
+        
+        // Store the new preference
+        localStorage.setItem('tamWikiHideControls', newState ? 'true' : 'false');
+        
+        sendResponse({success: true, isHidden: newState});
+        break;
       case 'resetAll':
         resetStyles();
         sendResponse({success: true});
+        break;
+      case 'getState':
+        // Added to return current state for popup initialization
+        sendResponse({
+          success: true, 
+          size: currentFontSize,
+          wikiControlsHidden: localStorage.getItem('tamWikiHideControls') === 'true'
+        });
         break;
       default:
         sendResponse({success: false, error: 'Unknown action'});
@@ -218,7 +272,82 @@ function resetStyles() {
   
   document.body.classList.remove('high-contrast', 'dyslexia-mode');
   unboldText();
+  
+  // Show wiki appearance controls again if they were hidden
+  const appearanceHeader = document.querySelector('.vector-pinnable-header[data-feature-name="appearance-pinned"]');
+  if (appearanceHeader) {
+    appearanceHeader.style.display = '';
+  }
+  
+  // Reset TOC header with precise selector
+  const tocHeader = document.querySelector('.vector-pinnable-header.vector-toc-pinnable-header[data-feature-name="toc-pinned"][data-pinnable-element-id="vector-toc"]');
+  if (tocHeader) {
+    tocHeader.style.display = '';
+  }
+  
+  // Reset TOC list
+  const tocList = document.querySelector('#mw-panel-toc-list');
+  if (tocList) {
+    tocList.style.display = '';
+  }
+  
+  // Reset header container
+  const headerContainer = document.querySelector('.vector-header-container');
+  if (headerContainer) {
+    headerContainer.style.display = '';
+  }
+  
+  const appearanceContainers = document.querySelectorAll('#vector-appearance-pinned-container, #vector-appearance-unpinned-container');
+  appearanceContainers.forEach(container => {
+    if (container) container.style.display = '';
+  });
+  
+  localStorage.removeItem('tamWikiHideControls');
 }
 
-console.log('Texas A&M Wikipedia accessibility enhancer loaded');
+// Apply stored preferences on load
+function applyStoredPreferences() {
+  // Default is visible (false), so only hide if explicitly set to true
+  if (localStorage.getItem('tamWikiHideControls') === 'true') {
+    // Hide appearance panel
+    const appearanceHeader = document.querySelector('.vector-pinnable-header[data-feature-name="appearance-pinned"]');
+    if (appearanceHeader) {
+      appearanceHeader.style.display = 'none';
+    }
+    
+    const appearanceContainers = document.querySelectorAll('#vector-appearance-pinned-container, #vector-appearance-unpinned-container');
+    appearanceContainers.forEach(container => {
+      if (container) container.style.display = 'none';
+    });
+    
+    // Hide TOC header with the exact selector
+    const tocHeader = document.querySelector('.vector-pinnable-header.vector-toc-pinnable-header[data-feature-name="toc-pinned"][data-pinnable-element-id="vector-toc"]');
+    if (tocHeader) {
+      tocHeader.style.display = 'none';
+    }
+    
+    // Hide TOC list
+    const tocList = document.querySelector('#mw-panel-toc-list');
+    if (tocList) {
+      tocList.style.display = 'none';
+    }
+    
+    // Hide header container
+    const headerContainer = document.querySelector('.vector-header-container');
+    if (headerContainer) {
+      headerContainer.style.display = 'none';
+    }
+  }
+  
+  // Handle backward compatibility with old storage key
+  if (localStorage.getItem('tamWikiHideAppearance') === 'true') {
+    localStorage.setItem('tamWikiHideControls', 'true');
+    localStorage.removeItem('tamWikiHideAppearance');
+    applyStoredPreferences(); // Re-apply with the new key
+  }
+}
 
+// Call this function on load
+applyStoredPreferences();
+
+console.log('Texas A&M Wikipedia accessibility enhancer loaded');
