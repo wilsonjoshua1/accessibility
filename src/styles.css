@@ -37,13 +37,11 @@
     word-spacing: 2px !important;
   }
   
-  /* Only bold the first half of words */
   .dyslexia-mode .first-half-text {
     font-weight: bold !important;
     background-color: transparent !important;
   }
   
-  /* Ensure the rest of the text is normal weight */
   .dyslexia-mode *:not(.first-half-text) {
     font-weight: normal !important;
   }
@@ -55,10 +53,7 @@
   }
   
   /* Ensure text scaling works on form elements */
-  input, 
-  textarea, 
-  select, 
-  button {
+  input, textarea, select, button {
     font-size: inherit !important;
   }
   
@@ -83,7 +78,7 @@
     margin-bottom: 5px !important;
   }
   
-  /* Color blindness simulation filters applied on html & body */
+  /* Color-blindness filters on html & body */
   html.color-blind-protanopia,
   body.color-blind-protanopia {
     filter: url(#protanopia-filter) !important;
@@ -95,5 +90,10 @@
   html.color-blind-tritanopia,
   body.color-blind-tritanopia {
     filter: url(#tritanopia-filter) !important;
+  }
+  
+  /* Highlight for line-focus */
+  .focused-line {
+    background-color: rgba(255, 255, 0, 0.3) !important;
   }
   

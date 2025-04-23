@@ -1,37 +1,39 @@
-document.addEventListener('DOMContentLoaded', function() {
-  const buttons = {
-    increaseText: {action: 'increaseTextSize', display: document.getElementById('sizeDisplay')},
-    decreaseText: {action: 'decreaseTextSize', display: document.getElementById('sizeDisplay')},
-    toggleContrast: {action: 'toggleContrast'},
-    toggleDyslexia: {action: 'toggleDyslexia'},
-    toggleWikiControls: {action: 'toggleWikiControls'},
-    resetAll: {action: 'resetAll'}
+document.addEventListener('DOMContentLoaded', () => {
+  const sendCmd = async (action, payload = {}) => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    try {
+      return await chrome.tabs.sendMessage(tab.id, { action, ...payload });
+    } catch {
+      await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] });
+      await chrome.scripting.insertCSS({ target: { tabId: tab.id }, files: ['styles.css'] });
+      return await chrome.tabs.sendMessage(tab.id, { action, ...payload });
+    }
   };
 
-  // Update button text based on current state
+  const buttons = {
+    increaseText: { action: 'increaseTextSize', display: document.getElementById('sizeDisplay') },
+    decreaseText: { action: 'decreaseTextSize', display: document.getElementById('sizeDisplay') },
+    toggleContrast: { action: 'toggleContrast' },
+    toggleDyslexia: { action: 'toggleDyslexia' },
+    toggleWikiControls: { action: 'toggleWikiControls' },
+    resetAll: { action: 'resetAll' }
+  };
+
   async function updateButtonStates() {
     try {
-      const [tab] = await chrome.tabs.query({
-        active: true,
-        currentWindow: true
-      });
-      
-      if (!tab.url.includes('en.wikipedia.org/wiki/Texas_A%26M_University')) {
-        return;
-      }
-      
-      // Get current state from content script
-      const response = await chrome.tabs.sendMessage(tab.id, { action: 'getState' });
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+      if (!tab.url.includes('en.wikipedia.org/wiki/Texas_A%26M_University')) return;
+
+      const response = await sendCmd('getState');
       if (response?.success) {
-        // Update wiki controls button text
         const wikiButton = document.getElementById('toggleWikiControls');
         if (wikiButton) {
-          wikiButton.textContent = response.wikiControlsHidden 
-            ? 'Turn off Focus Mode' 
+          wikiButton.textContent = response.wikiControlsHidden
+            ? 'Turn off Focus Mode'
             : 'Turn on Focus Mode';
         }
-        
-        // Update font size display
+
         const sizeDisplay = document.getElementById('sizeDisplay');
         if (sizeDisplay) {
           sizeDisplay.textContent = `${Math.round(response.size * 100)}%`;
@@ -42,152 +44,74 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // Set up button click handlers
   Object.entries(buttons).forEach(([id, config]) => {
     const button = document.getElementById(id);
     if (!button) return;
-    
+
     button.addEventListener('click', async () => {
-      try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (!tab.url.includes('en.wikipedia.org/wiki/Texas_A%26M_University')) {
-          alert('Please use this on the Texas A&M University Wikipedia page');
-          return;
-        }
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
+      if (!tab.url.includes('en.wikipedia.org/wiki/Texas_A%26M_University')) {
+        alert('Please use this on the Texas A&M University Wikipedia page');
+        return;
+      }
 
-        let response;
-        try {
-          response = await chrome.tabs.sendMessage(tab.id, { action: config.action });
-        } catch (e) {
-          await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            files: ['content.js']
-          });
-          await chrome.scripting.insertCSS({
-            target: { tabId: tab.id },
-            files: ['styles.css']
-          });
-          response = await chrome.tabs.sendMessage(tab.id, { action: config.action });
+      const response = await sendCmd(config.action);
+      if (response?.success) {
+        if (config.display) {
+          config.display.textContent = `${Math.round(response.size * 100)}%`;
         }
-
-        if (response?.success) {
-          // Update display elements if they exist
-          if (config.display) {
-            config.display.textContent = `${Math.round(response.size * 100)}%`;
-          }
-          
-          // Update toggle button text if this was a toggle action
-          if (config.action === 'toggleWikiControls' && button) {
-            button.textContent = response.isHidden 
-              ? 'Turn off Focus Mode' 
-              : 'Turn on Focus Mode';
-          }
+        if (config.action === 'toggleWikiControls') {
+          button.textContent = response.isHidden
+            ? 'Turn off Focus Mode'
+            : 'Turn on Focus Mode';
         }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('Failed to execute command. Please refresh the page and try again.');
+        if (id === 'resetAll') {
+          const lineSelect = document.getElementById('lineFocusSelect');
+          if (lineSelect) lineSelect.value = 'off';
+        }
       }
     });
   });
 
-  
-  // Initialize button states when popup opens
+  // Initialize button states
   updateButtonStates();
-});
 
-
-  // Color filter select handler
+  // Color filter select
   const colorFilterSelect = document.getElementById('colorFilterSelect');
   if (colorFilterSelect) {
     colorFilterSelect.addEventListener('change', async () => {
       const filter = colorFilterSelect.value;
       const action = filter === 'none' ? 'resetColorFilter' : 'setColorFilter';
-      try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        let response;
-        try {
-          response = await chrome.tabs.sendMessage(tab.id, { action, filter });
-        } catch (e) {
-          await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            files: ['content.js']
-          });
-          await chrome.scripting.insertCSS({
-            target: { tabId: tab.id },
-            files: ['styles.css']
-          });
-          response = await chrome.tabs.sendMessage(tab.id, { action, filter });
-        }
-      } catch (error) {
-        console.error('Error:', error);
+      const response = await sendCmd(action, { filter });
+      if (!response?.success) {
         alert('Failed to apply color filter. Please refresh the page and try again.');
       }
     });
   }
-
-  // Custom colors apply handler
-  const applyColorsBtn = document.getElementById('applyColors');
-  if (applyColorsBtn) {
-    applyColorsBtn.addEventListener('click', async () => {
-      const textColor = document.getElementById('textColorInput').value;
-      const bgColor = document.getElementById('bgColorInput').value;
-      try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        let response;
-        try {
-          response = await chrome.tabs.sendMessage(tab.id, {
-            action: 'setCustomColors',
-            textColor,
-            bgColor
-          });
-        } catch (e) {
-          await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            files: ['content.js']
-          });
-          await chrome.scripting.insertCSS({
-            target: { tabId: tab.id },
-            files: ['styles.css']
-          });
-          response = await chrome.tabs.sendMessage(tab.id, {
-            action: 'setCustomColors',
-            textColor,
-            bgColor
-          });
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('Failed to apply custom colors. Please refresh the page and try again.');
-      }
-    });
-  }
-
-  // Reset custom colors handler
-  const resetColorsBtn = document.getElementById('resetColors');
-  if (resetColorsBtn) {
-    resetColorsBtn.addEventListener('click', async () => {
-      try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        let response;
-        try {
-          response = await chrome.tabs.sendMessage(tab.id, { action: 'resetCustomColors' });
-        } catch (e) {
-          await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            files: ['content.js']
-          });
-          await chrome.scripting.insertCSS({
-            target: { tabId: tab.id },
-            files: ['styles.css']
-          });
-          response = await chrome.tabs.sendMessage(tab.id, { action: 'resetCustomColors' });
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('Failed to reset custom colors. Please refresh the page and try again.');
-      }
-    });
-  }
+});
 
 
+  // Color filter
+  document.getElementById('colorFilterSelect').addEventListener('change', async e => {
+    const filter = e.target.value;
+    await sendCmd(filter==='none'?'resetColorFilter':'setColorFilter', { filter });
+  });
+
+  // Custom colors
+  document.getElementById('applyColors').addEventListener('click', async () => {
+    const textColor = document.getElementById('textColorInput').value;
+    const bgColor = document.getElementById('bgColorInput').value;
+    await sendCmd('setCustomColors', { textColor, bgColor });
+  });
+  document.getElementById('resetColors').addEventListener('click', async () => {
+    await sendCmd('resetCustomColors');
+  });
+
+
+  // **New** Line Focus toggle
+  document.getElementById('lineFocusSelect').addEventListener('change', async e => {
+    const on = e.target.value === 'on';
+    await sendCmd(on ? 'enableLineFocus' : 'disableLineFocus');
+  });
+});
