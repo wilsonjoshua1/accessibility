@@ -73,17 +73,27 @@
 
   <div class="control-group">
     <h4>Text Size</h4>
+
     <div style="display:flex; gap:10px; align-items:center;">
       <button id="decreaseText" style="flex:1;">Decrease</button>
       <span id="sizeDisplay" style="flex:0 0 40px; text-align:center; font-weight:bold;">100%</span>
       <button id="increaseText" style="flex:1;">Increase</button>
+
     </div>
   </div>
 
   <div class="control-group">
     <h4>Display Options</h4>
-    <button id="toggleContrast">Toggle Contrast</button>
-    <button id="toggleDyslexia">Dyslexia Mode</button>
+
+    <button id="toggleContrast">
+      Toggle Contrast
+    </button>
+    <button id="toggleDyslexia">
+      Dyslexia Mode
+    </button>
+    <button id="toggleWikiControls">
+      Turn on Focus Mode
+    </button>
   </div>
 
   <div class="control-group">
@@ -108,11 +118,16 @@
 
   <!-- New Reading Aid -->
   <div class="control-group">
+
     <h4>Reading Aid</h4>
     <select id="lineFocusSelect">
       <option value="off">Off</option>
       <option value="on">Line Focus On</option>
     </select>
+
+
+    <button id="resetAll" style="background-color: #666;">Reset All</button>
+
   </div>
 
   <div class="control-group">
