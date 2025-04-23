@@ -114,4 +114,4 @@ document.addEventListener('DOMContentLoaded', () => {
     const on = e.target.value === 'on';
     await sendCmd(on ? 'enableLineFocus' : 'disableLineFocus');
   });
-});
+
