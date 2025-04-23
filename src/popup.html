@@ -3,8 +3,8 @@
 <head>
   <style>
     :root {
-      --primary-color: #0066cc;
-      --primary-hover: #004d99;
+      --primary-color: #500000; /* Texas A&M maroon */
+      --primary-hover: #400000;
       --secondary-color: #f0f0f0;
       --text-color: #333;
       --border-color: #ddd;
@@ -32,6 +32,7 @@
       margin: 0;
       font-size: 16px;
       font-weight: 600;
+      text-align: center;
     }
     
     .control-group {
@@ -98,9 +99,14 @@
       font-size: 14px;
     }
     
+    /* Remove the margin-right from icons to center text properly */
     .icon {
-      margin-right: 8px;
       font-size: 14px;
+    }
+    
+    /* Only add margin if the icon actually has content */
+    .icon:not(:empty) {
+      margin-right: 8px;
     }
     
     .footer {
@@ -114,18 +120,20 @@
 </head>
 <body>
   <div class="header">
-    <h3>Accessibility Controls</h3>
+    <h3>Texas A&M Accessibility Tools</h3>
   </div>
   
   <div class="control-group">
     <h4>Text Size</h4>
     <div class="size-controls">
       <button id="decreaseText" class="size-btn">
-        <span class="icon"></span> Decrease
+        <!-- Remove empty icon span -->
+        Decrease
       </button>
       <span id="sizeDisplay">100%</span>
       <button id="increaseText" class="size-btn">
-        <span class="icon"></span> Increase
+        <!-- Remove empty icon span -->
+        Increase
       </button>
     </div>
   </div>
@@ -133,21 +141,24 @@
   <div class="control-group">
     <h4>Display Options</h4>
     <button id="toggleContrast">
-      <span class="icon"></span> Toggle Contrast
+      <!-- Remove empty icon span -->
+      Toggle Contrast
     </button>
     <button id="toggleDyslexia">
-      <span class="icon"></span> Dyslexia Mode
+      <!-- Remove empty icon span -->
+      Dyslexia Mode
     </button>
   </div>
   
   <div class="control-group">
     <button id="resetAll" style="background-color: #666;">
-      <span class="icon"></span> Reset All
+      <!-- Remove empty icon span -->
+      Reset All
     </button>
   </div>
   
   <div class="footer">
-    Ben & Jerry's Accessibility Tool
+    Texas A&M University Accessibility Tool
   </div>
   
   <script src="popup.js"></script>
