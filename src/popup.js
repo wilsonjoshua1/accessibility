@@ -23,7 +23,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!btn) return;
     btn.addEventListener('click', async () => {
       const res = await sendCmd(cfg[0]);
-      if (res?.size && cfg[1]) document.getElementById(cfg[1]).textContent = `${Math.round(res.size*100)}%`;
+      if (res?.size && cfg[1]) {
+        document.getElementById(cfg[1]).textContent = `${Math.round(res.size * 100)}%`;
+      }
+      // If this was a resetAll, also reset the Line Focus dropdown
+      if (id === 'resetAll') {
+        const lineSelect = document.getElementById('lineFocusSelect');
+        if (lineSelect) lineSelect.value = 'off';
+      }
     });
   });
 
