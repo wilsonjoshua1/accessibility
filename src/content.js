@@ -12,6 +12,9 @@ let prevHighlighted = null;
 // Inject SVG filters immediately
 ensureSVGFilters();
 
+// Apply stored preferences for wiki controls on load
+applyStoredPreferences();
+
 chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
   try {
     switch (req.action) {
@@ -19,71 +22,62 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
         currentFontSize = Math.min(currentFontSize + 0.05, 2.0);
         applyFontSize();
         return sendResponse({ success: true, size: currentFontSize });
+
       case 'decreaseTextSize':
         currentFontSize = Math.max(currentFontSize - 0.05, 0.5);
         applyFontSize();
         return sendResponse({ success: true, size: currentFontSize });
+
       case 'toggleContrast':
         document.body.classList.toggle('high-contrast');
         return sendResponse({ success: true });
+
       case 'toggleDyslexia':
-        const dys = document.body.classList.toggle('dyslexia-mode');
+        const active = document.body.classList.toggle('dyslexia-mode');
         unboldText();
-        if (dys) boldFirstHalfOfWords();
+        if (active) boldFirstHalfOfWords();
         return sendResponse({ success: true });
+
       case 'setColorFilter':
         applyColorFilter(req.filter);
         return sendResponse({ success: true });
+
       case 'resetColorFilter':
         resetColorFilter();
         return sendResponse({ success: true });
-      case 'toggleWikiControls':
-        const appearanceHeader = document.querySelector('.vector-pinnable-header[data-feature-name="appearance-pinned"]');
-        const tocHeader = document.querySelector('.vector-pinnable-header.vector-toc-pinnable-header[data-feature-name="toc-pinned"][data-pinnable-element-id="vector-toc"]');
-        const tocList = document.querySelector('#mw-panel-toc-list');
-        const headerContainer = document.querySelector('.vector-header-container');
-        
-        const currentState = localStorage.getItem('tamWikiHideControls') === 'true';
-        const newState = !currentState;
-        const newDisplayValue = newState ? 'none' : '';
-        
-        if (appearanceHeader) {
-          appearanceHeader.style.display = newDisplayValue;
-          const appearanceContainers = document.querySelectorAll('#vector-appearance-pinned-container, #vector-appearance-unpinned-container');
-          appearanceContainers.forEach(container => {
-            if (container) container.style.display = newDisplayValue;
-          });
-        }
-        
-        if (tocHeader) tocHeader.style.display = newDisplayValue;
-        if (tocList) tocList.style.display = newDisplayValue;
-        if (headerContainer) headerContainer.style.display = newDisplayValue;
-        
-        localStorage.setItem('tamWikiHideControls', newState ? 'true' : 'false');
-        sendResponse({success: true, isHidden: newState});
-        break;
+
+      case 'toggleWikiControls': {
+        const hidden = toggleWikiControls();
+        return sendResponse({ success: true, isHidden: hidden });
+      }
+
       case 'setCustomColors':
         applyCustomColors(req.textColor, req.bgColor);
         return sendResponse({ success: true });
+
       case 'resetCustomColors':
         resetCustomColors();
         return sendResponse({ success: true });
+
       case 'enableLineFocus':
         enableLineFocus();
         return sendResponse({ success: true });
+
       case 'disableLineFocus':
         disableLineFocus();
         return sendResponse({ success: true });
+
       case 'resetAll':
         resetStyles();
         return sendResponse({ success: true });
+
       case 'getState':
-        sendResponse({
-          success: true, 
+        return sendResponse({
+          success: true,
           size: currentFontSize,
           wikiControlsHidden: localStorage.getItem('tamWikiHideControls') === 'true'
         });
-        break;
+
       default:
         return sendResponse({ success: false, error: 'Unknown action' });
     }
@@ -122,21 +116,27 @@ function boldFirstHalfOfWords() {
     document.getElementById('firstHeading')
   ].filter(x => x);
   if (!areas.length) areas.push(document.body);
+
   areas.forEach(area => {
     const walker = document.createTreeWalker(area, NodeFilter.SHOW_TEXT, {
       acceptNode(node) {
-        if (processed.has(node) || !node.nodeValue.trim() ||
-            ['SCRIPT','STYLE','NOSCRIPT','CODE','PRE'].includes(node.parentNode.nodeName) ||
-            node.parentNode.closest('.mw-editsection')) return NodeFilter.FILTER_REJECT;
+        if (
+          processed.has(node) ||
+          !node.nodeValue.trim() ||
+          ['SCRIPT', 'STYLE', 'NOSCRIPT', 'CODE', 'PRE'].includes(node.parentNode.nodeName) ||
+          node.parentNode.closest('.mw-editsection')
+        ) return NodeFilter.FILTER_REJECT;
         return NodeFilter.FILTER_ACCEPT;
       }
     });
+
     let node;
     while ((node = walker.nextNode())) {
       processed.add(node);
       const text = node.nodeValue;
       const parts = text.split(/(\s+)/);
       const frag = document.createDocumentFragment();
+
       parts.forEach(part => {
         if (!part.trim()) {
           frag.appendChild(document.createTextNode(part));
@@ -149,6 +149,7 @@ function boldFirstHalfOfWords() {
           frag.appendChild(document.createTextNode(part.slice(half)));
         }
       });
+
       node.parentNode.replaceChild(frag, node);
     }
   });
@@ -156,40 +157,64 @@ function boldFirstHalfOfWords() {
 
 function unboldText() {
   document.querySelectorAll('.first-half-text').forEach(span => {
-    const text = document.createTextNode(span.textContent);
-    span.parentNode.replaceChild(text, span);
+    const txt = document.createTextNode(span.textContent);
+    span.parentNode.replaceChild(txt, span);
   });
 }
 
-// --- Reset all styles ---
+// --- Wiki controls toggling ---
+function toggleWikiControls() {
+  const wasHidden = localStorage.getItem('tamWikiHideControls') === 'true';
+  const hide = !wasHidden;
+  const disp = hide ? 'none' : '';
+
+  const appearanceHeader = document.querySelector(
+    '.vector-pinnable-header[data-feature-name="appearance-pinned"]'
+  );
+  if (appearanceHeader) appearanceHeader.style.display = disp;
+
+  document.querySelectorAll(
+    '#vector-appearance-pinned-container, #vector-appearance-unpinned-container'
+  ).forEach(c => (c.style.display = disp));
+
+  const tocHeader = document.querySelector(
+    '.vector-pinnable-header.vector-toc-pinnable-header[data-feature-name="toc-pinned"][data-pinnable-element-id="vector-toc"]'
+  );
+  if (tocHeader) tocHeader.style.display = disp;
+
+  const tocList = document.querySelector('#mw-panel-toc-list');
+  if (tocList) tocList.style.display = disp;
+
+  const headerContainer = document.querySelector('.vector-header-container');
+  if (headerContainer) headerContainer.style.display = disp;
+
+  localStorage.setItem('tamWikiHideControls', hide ? 'true' : 'false');
+  return hide;
+}
+
+// --- Reset everything ---
 function resetStyles() {
   currentFontSize = 1.0;
-  ['accessibility-text-size','custom-colors'].forEach(id => {
+  ['accessibility-text-size', 'custom-colors'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.remove();
   });
-  document.body.classList.remove('high-contrast','dyslexia-mode');
+  document.body.classList.remove('high-contrast', 'dyslexia-mode');
   resetColorFilter();
   resetCustomColors();
   disableLineFocus();
+  unboldText();
 
-  // Reset wiki controls visibility
-  const elements = [
-    '.vector-pinnable-header[data-feature-name="appearance-pinned"]',
-    '.vector-pinnable-header.vector-toc-pinnable-header[data-feature-name="toc-pinned"][data-pinnable-element-id="vector-toc"]',
-    '#mw-panel-toc-list',
-    '.vector-header-container',
-    '#vector-appearance-pinned-container',
-    '#vector-appearance-unpinned-container'
-  ];
-  
-  elements.forEach(selector => {
-    document.querySelectorAll(selector).forEach(el => {
-      el.style.display = '';
-    });
-  });
-  
+  // Show wiki controls again
+  toggleWikiControls(); // toggles off if was on
   localStorage.removeItem('tamWikiHideControls');
+}
+
+// --- Apply stored wiki-controls preference ---
+function applyStoredPreferences() {
+  if (localStorage.getItem('tamWikiHideControls') === 'true') {
+    toggleWikiControls(); // hides controls on load
+  }
 }
 
 // --- SVG Filters & Custom Colors ---
@@ -209,7 +234,6 @@ function ensureSVGFilters() {
 }
 
 function applyColorFilter(filter) {
-  ensureSVGFilters();
   resetColorFilter();
   if (filter && filter !== 'none') {
     document.documentElement.classList.add(`color-blind-${filter}`);
@@ -218,7 +242,7 @@ function applyColorFilter(filter) {
 }
 
 function resetColorFilter() {
-  ['protanopia','deuteranopia','tritanopia'].forEach(f => {
+  ['protanopia', 'deuteranopia', 'tritanopia'].forEach(f => {
     document.documentElement.classList.remove(`color-blind-${f}`);
     document.body.classList.remove(`color-blind-${f}`);
   });
@@ -229,7 +253,10 @@ function applyCustomColors(textColor, bgColor) {
   const style = document.createElement('style');
   style.id = 'custom-colors';
   style.textContent = `
-    body, body * { background-color: ${bgColor} !important; color: ${textColor} !important; }
+    body, body * {
+      background-color: ${bgColor} !important;
+      color: ${textColor} !important;
+    }
   `;
   document.head.appendChild(style);
 }
@@ -239,61 +266,34 @@ function resetCustomColors() {
   if (el) el.remove();
 }
 
-// --- Improved Line Focus Feature ---
+// --- Paragraph-by-Paragraph Focus Highlight ---
 function enableLineFocus() {
   if (lineFocusActive) return;
   lineFocusActive = true;
-  
-  // Clear any existing highlight first
-  clearHighlight();
-  
-  // Add event listeners with passive for better performance
-  document.addEventListener('mousemove', handleMouseMove, { passive: true });
-  document.addEventListener('focusin', handleFocusIn, { passive: true });
+  document.addEventListener('mousemove', trackLine);
+  document.addEventListener('focusin', trackLine);
 }
 
 function disableLineFocus() {
-  if (!lineFocusActive) return;
   lineFocusActive = false;
-  
-  document.removeEventListener('mousemove', handleMouseMove);
-  document.removeEventListener('focusin', handleFocusIn);
+  document.removeEventListener('mousemove', trackLine);
+  document.removeEventListener('focusin', trackLine);
   clearHighlight();
 }
 
-function handleMouseMove(e) {
+function trackLine(e) {
   const x = e.clientX, y = e.clientY;
-  const el = document.elementFromPoint(x, y);
-  if (el) {
-    highlightNearestTextContainer(el);
-  }
+  const el = e.type === 'focusin' ? e.target : document.elementFromPoint(x, y);
+  highlightContainer(el);
 }
 
-function handleFocusIn(e) {
-  highlightNearestTextContainer(e.target);
-}
-
-function highlightNearestTextContainer(el) {
+function highlightContainer(el) {
   if (!el) return;
-  
-  // Find the nearest text container element
-  const container = el.closest('p, li, blockquote, h1, h2, h3, h4, h5, h6, table, div, section') || el;
+  const container = el.closest('p, li, blockquote, h1,h2,h3,h4,h5,h6') || el;
   if (container === prevHighlighted) return;
-  
   clearHighlight();
-  
-  // Only highlight if the element contains meaningful text
-  if (container.textContent.trim().length > 0) {
-    container.classList.add('focused-line');
-    prevHighlighted = container;
-    
-    // Scroll the element into view if needed
-    container.scrollIntoView({
-      behavior: 'smooth',
-      block: 'nearest',
-      inline: 'nearest'
-    });
-  }
+  container.classList.add('focused-line');
+  prevHighlighted = container;
 }
 
 function clearHighlight() {
@@ -302,35 +302,5 @@ function clearHighlight() {
     prevHighlighted = null;
   }
 }
-
-// Apply stored preferences on load
-function applyStoredPreferences() {
-  if (localStorage.getItem('tamWikiHideControls') === 'true') {
-    const elements = [
-      '.vector-pinnable-header[data-feature-name="appearance-pinned"]',
-      '#vector-appearance-pinned-container',
-      '#vector-appearance-unpinned-container',
-      '.vector-pinnable-header.vector-toc-pinnable-header[data-feature-name="toc-pinned"][data-pinnable-element-id="vector-toc"]',
-      '#mw-panel-toc-list',
-      '.vector-header-container'
-    ];
-    
-    elements.forEach(selector => {
-      document.querySelectorAll(selector).forEach(el => {
-        el.style.display = 'none';
-      });
-    });
-  }
-  
-  // Handle backward compatibility with old storage key
-  if (localStorage.getItem('tamWikiHideAppearance') === 'true') {
-    localStorage.setItem('tamWikiHideControls', 'true');
-    localStorage.removeItem('tamWikiHideAppearance');
-    applyStoredPreferences();
-  }
-}
-
-// Call this function on load
-applyStoredPreferences();
 
 console.log('Texas A&M Wikipedia accessibility enhancer loaded');

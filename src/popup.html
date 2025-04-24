@@ -8,12 +8,10 @@
       --secondary-color: #f0f0f0;
       --text-color: #333;
       --border-color: #ddd;
-      --success-color: #28a745;
     }
     body {
       width: 280px;
-      margin: 0;
-      padding: 0;
+      margin: 0; padding: 0;
       font-family: 'Segoe UI', Roboto, Arial, sans-serif;
       color: var(--text-color);
       background: white;
@@ -45,8 +43,8 @@
       color: white;
       border: none;
       border-radius: 4px;
-      cursor: pointer;
       font-size: 13px;
+      cursor: pointer;
       transition: all 0.2s;
     }
     button:hover { background: var(--primary-hover); transform: translateY(-1px); }
@@ -62,9 +60,9 @@
     .footer {
       padding: 10px 15px;
       font-size: 11px;
-      text-align: center;
       color: #666;
       background: var(--secondary-color);
+      text-align: center;
     }
   </style>
 </head>
@@ -73,27 +71,18 @@
 
   <div class="control-group">
     <h4>Text Size</h4>
-
     <div style="display:flex; gap:10px; align-items:center;">
       <button id="decreaseText" style="flex:1;">Decrease</button>
       <span id="sizeDisplay" style="flex:0 0 40px; text-align:center; font-weight:bold;">100%</span>
       <button id="increaseText" style="flex:1;">Increase</button>
-
     </div>
   </div>
 
   <div class="control-group">
     <h4>Display Options</h4>
-
-    <button id="toggleContrast">
-      Toggle Contrast
-    </button>
-    <button id="toggleDyslexia">
-      Dyslexia Mode
-    </button>
-    <button id="toggleWikiControls">
-      Turn on Focus Mode
-    </button>
+    <button id="toggleContrast">Toggle Contrast</button>
+    <button id="toggleDyslexia">Dyslexia Mode</button>
+    <button id="toggleWikiControls">Turn on Focus Mode</button>
   </div>
 
   <div class="control-group">
@@ -116,18 +105,16 @@
     <button id="resetColors" style="background:#666;">Reset Colors</button>
   </div>
 
-  <!-- New Reading Aid -->
   <div class="control-group">
-
     <h4>Reading Aid</h4>
     <select id="lineFocusSelect">
       <option value="off">Off</option>
       <option value="on">Line Focus On</option>
     </select>
+  </div>
 
-
-    <button id="resetAll" style="background-color: #666;">Reset All</button>
-
+  <div class="control-group">
+    <button id="resetAll" style="background:#666;">Reset All</button>
   </div>
 
   <div class="footer">Texas A&M University Accessibility Tool</div>
