@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const buttons = {
     increaseText: { action: 'increaseTextSize', display: document.getElementById('sizeDisplay') },
     decreaseText: { action: 'decreaseTextSize', display: document.getElementById('sizeDisplay') },
-    toggleContrast: { action: 'toggleContrast' },
+    // toggleContrast: { action: 'toggleContrast' },
     toggleDyslexia: { action: 'toggleDyslexia' },
     toggleWikiControls: { action: 'toggleWikiControls' },
     resetAll: { action: 'resetAll' }
@@ -74,14 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
 });
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('toggleContrast').addEventListener('click', () => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      chrome.scripting.executeScript({
-        target: { tabId: tabs[0].id },
-        func: togglePageContrast
-      });
-    });
-  });
+
 
   function togglePageContrast() {
     const body = document.body;
@@ -146,25 +139,4 @@ stopButton.addEventListener("click", () => {
   });
 });
 
-// Handle section skipping
-sectionSelect.addEventListener("change", (e) => {
-  const selectedSection = e.target.value;
-  if (selectedSection) {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      chrome.tabs.sendMessage(tabs[0].id, { action: "skipToSection", sectionId: selectedSection });
-    });
-  }
-});
-
-// Populate section dropdown dynamically
-chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-  chrome.tabs.sendMessage(tabs[0].id, { action: "getSections" }, (sections) => {
-    sections.forEach((section) => {
-      const option = document.createElement("option");
-      option.value = section.id;
-      option.textContent = section.title;
-      sectionSelect.appendChild(option);
-    });
-  });
-});
 
