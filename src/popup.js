@@ -71,22 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
     await sendCmd(on ? 'enableLineFocus' : 'disableLineFocus');
   });
 
-  // Text-to-Speech controls
-  document.getElementById('read-button').addEventListener('click', () => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      chrome.tabs.sendMessage(tabs[0].id, { action: 'read_text' });
-    });
-  });
-  document.getElementById('pause-button').addEventListener('click', () => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      chrome.tabs.sendMessage(tabs[0].id, { action: 'pause_speech' });
-    });
-  });
-  document.getElementById('stop-button').addEventListener('click', () => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      chrome.tabs.sendMessage(tabs[0].id, { action: 'stop_speech' });
-    });
-  });
+  
 });
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('toggleContrast').addEventListener('click', () => {
@@ -113,3 +98,73 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 });
+
+// Reference to the TTS controls
+const startButton = document.getElementById("tts-start");
+const pauseButton = document.getElementById("tts-pause");
+const resumeButton = document.getElementById("tts-resume");
+const stopButton = document.getElementById("tts-stop");
+const sectionSelect = document.getElementById("section-select");
+
+// State to track TTS status
+let isSpeaking = false;
+let isPaused = false;
+
+// Handle start TTS
+startButton.addEventListener("click", () => {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.tabs.sendMessage(tabs[0].id, { action: "startTTS" });
+    isSpeaking = true;
+    isPaused = false;
+  });
+});
+
+// Handle pause TTS
+pauseButton.addEventListener("click", () => {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.tabs.sendMessage(tabs[0].id, { action: "pauseTTS" });
+    isSpeaking = false;
+    isPaused = true;
+  });
+});
+
+// Handle resume TTS
+resumeButton.addEventListener("click", () => {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.tabs.sendMessage(tabs[0].id, { action: "resumeTTS" });
+    isSpeaking = true;
+    isPaused = false;
+  });
+});
+
+// Handle stop TTS
+stopButton.addEventListener("click", () => {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.tabs.sendMessage(tabs[0].id, { action: "stopTTS" });
+    isSpeaking = false;
+    isPaused = false;
+  });
+});
+
+// Handle section skipping
+sectionSelect.addEventListener("change", (e) => {
+  const selectedSection = e.target.value;
+  if (selectedSection) {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chrome.tabs.sendMessage(tabs[0].id, { action: "skipToSection", sectionId: selectedSection });
+    });
+  }
+});
+
+// Populate section dropdown dynamically
+chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+  chrome.tabs.sendMessage(tabs[0].id, { action: "getSections" }, (sections) => {
+    sections.forEach((section) => {
+      const option = document.createElement("option");
+      option.value = section.id;
+      option.textContent = section.title;
+      sectionSelect.appendChild(option);
+    });
+  });
+});
+

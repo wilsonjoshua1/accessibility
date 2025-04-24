@@ -344,36 +344,99 @@ function clearHighlight() {
     prevHighlighted = null;
   }
 }
-// Text-to-Speech: Read the main content of the page
-function readMainContent() {
-  const mainContent = document.querySelector('main') || document.body;
-  const textToRead = mainContent.innerText || "Sorry, there's no readable content on this page.";
 
-  const utterance = new SpeechSynthesisUtterance(textToRead);
-  utterance.lang = 'en-US';
-  utterance.rate = 1; // Adjust rate if needed
-  utterance.pitch = 1;
+// Initialize the SpeechSynthesis API
+let speechSynthesis = window.speechSynthesis;
+let currentUtterance = null;
+let isPaused = false;
+let sections = []; // To hold sections of the page for skipping
 
-  speechSynthesis.speak(utterance);
-}
-
-
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'read_text') {
-    readMainContent();
-  } else if (request.action === 'pause_speech') {
-    if (speechSynthesis.speaking && !speechSynthesis.paused) {
-      speechSynthesis.pause();
-    }
-  } else if (request.action === 'resume_speech') {
-    if (speechSynthesis.paused) {
-      speechSynthesis.resume();
-    }
-  } else if (request.action === 'stop_speech') {
-    if (speechSynthesis.speaking) {
-      speechSynthesis.cancel();
-    }
+// Handle messages from popup.js
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  switch (message.action) {
+    case "startTTS":
+      startTextToSpeech();
+      break;
+    case "pauseTTS":
+      pauseTextToSpeech();
+      break;
+    case "resumeTTS":
+      resumeTextToSpeech();
+      break;
+    case "stopTTS":
+      stopTextToSpeech();
+      break;
+    case "skipToSection":
+      skipToSection(message.sectionId);
+      break;
+    case "getSections":
+      sendResponse(sections);
+      break;
+    default:
+      break;
   }
 });
+
+// Start Text-to-Speech
+function startTextToSpeech() {
+  if (!speechSynthesis.speaking && !speechSynthesis.paused) {
+    const content = document.body.innerText; // Grab entire page text
+    currentUtterance = new SpeechSynthesisUtterance(content);
+    currentUtterance.onend = () => {
+      isPaused = false;
+      isSpeaking = false;
+    };
+    speechSynthesis.speak(currentUtterance);
+  }
+}
+
+// Pause Text-to-Speech
+function pauseTextToSpeech() {
+  if (speechSynthesis.speaking) {
+    speechSynthesis.pause();
+    isPaused = true;
+  }
+}
+
+// Resume Text-to-Speech
+function resumeTextToSpeech() {
+  if (isPaused) {
+    speechSynthesis.resume();
+    isPaused = false;
+  }
+}
+
+// Stop Text-to-Speech
+function stopTextToSpeech() {
+  if (speechSynthesis.speaking || speechSynthesis.paused) {
+    speechSynthesis.cancel();
+    isPaused = false;
+    isSpeaking = false;
+  }
+}
+
+// Extract sections from the page for navigation
+function extractSections() {
+  sections = [];
+  const headings = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
+  headings.forEach((heading, index) => {
+    sections.push({
+      id: `section-${index}`,
+      title: heading.innerText
+    });
+  });
+}
+
+// Skip to a specific section
+function skipToSection(sectionId) {
+  const section = document.getElementById(sectionId);
+  if (section) {
+    section.scrollIntoView({ behavior: "smooth" });
+  }
+}
+
+// Initialize the sections when the page loads
+extractSections();
+
 
 console.log('Texas A&M Wikipedia accessibility enhancer loaded');
