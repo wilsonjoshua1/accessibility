@@ -43,6 +43,11 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
         resetColorFilter();
         return sendResponse({ success: true });
 
+      case 'toggleWikiControls': {
+        const hidden = toggleWikiControls();
+        return sendResponse({ success: true, isHidden: hidden });
+      }
+
       case 'setCustomColors':
         applyCustomColors(req.textColor, req.bgColor);
         return sendResponse({ success: true });
@@ -64,7 +69,23 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
         return sendResponse({ success: true });
 
       case 'getState':
-        return sendResponse({ success: true, size: currentFontSize });
+        return sendResponse({
+          success: true,
+          size: currentFontSize,
+          wikiControlsHidden: localStorage.getItem('tamWikiHideControls') === 'true'
+        });
+
+      case 'read_text':
+        readMainContent();
+        return sendResponse({ success: true });
+
+      case 'pause_speech':
+        speechSynthesis.pause();
+        return sendResponse({ success: true });
+
+      case 'stop_speech':
+        speechSynthesis.cancel();
+        return sendResponse({ success: true });
 
       default:
         return sendResponse({ success: false, error: 'Unknown action' });
@@ -179,7 +200,40 @@ function toggleWikiControls() {
   localStorage.setItem('tamWikiHideControls', hide ? 'true' : 'false');
   return hide;
 }
+function toggleWikiControls() {
+  const wasHidden = localStorage.getItem('tamWikiHideControls') === 'true';
+  const hide = !wasHidden;
+  
+  // Wikipedia-specific elements to hide
+  const wikiElements = [
+    '.vector-pinnable-header',
+    '#vector-appearance-pinned-container',
+    '#vector-appearance-unpinned-container',
+    '.vector-toc-pinnable-header',
+    '#mw-panel-toc-list',
+    '.vector-header-container',
+    '.mw-indicators',
+    '.mw-editsection',
+    '.catlinks',
+    '.mw-footer',
+    '.sidebar',
+    '.hatnote',
+    '.nomobile'
+  ];
 
+  wikiElements.forEach(selector => {
+    document.querySelectorAll(selector).forEach(el => {
+      if (hide) {
+        el.classList.add('wiki-focus-hidden');
+      } else {
+        el.classList.remove('wiki-focus-hidden');
+      }
+    });
+  });
+
+  localStorage.setItem('tamWikiHideControls', hide ? 'true' : 'false');
+  return hide;
+}
 // --- Reset everything ---
 function resetStyles() {
   currentFontSize = 1.0;
