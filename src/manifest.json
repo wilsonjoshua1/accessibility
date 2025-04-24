@@ -1,22 +1,22 @@
 {
   "manifest_version": 3,
-  "name": "Wikipedia Accessibility Enhancer",
+  "name": "Universal Accessibility Enhancer",
   "version": "1.0",
-  "description": "Improves accessibility on Texas A&M University Wikipedia page",
+  "description": "Accessibility tools for any website",
   "content_scripts": [{
-    "matches": ["https://en.wikipedia.org/wiki/Texas_A%26M_University*"],
+    "matches": ["<all_urls>"],
     "js": ["content.js"],
     "css": ["styles.css"],
     "run_at": "document_end",
     "all_frames": true
   }],
-  "permissions": ["activeTab", "scripting", "storage"],
-  "host_permissions": ["https://en.wikipedia.org/wiki/Texas_A%26M_University*"],
+  "permissions": ["activeTab","scripting","storage"],
+  "host_permissions": ["<all_urls>"],
   "action": {
     "default_popup": "popup.html"
   },
   "web_accessible_resources": [{
     "resources": ["styles.css"],
-    "matches": ["https://en.wikipedia.org/*"]
+    "matches": ["<all_urls>"]
   }]
 }
