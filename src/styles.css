@@ -3,22 +3,18 @@
     background-color: #000 !important;
     color: #fff !important;
   }
-  
   .high-contrast a {
     color: #3390ff !important;
     text-decoration: underline !important;
   }
-  
   .high-contrast #mw-head,
   .high-contrast #mw-panel {
     background-color: #222 !important;
   }
-  
   .high-contrast .mw-body {
     background-color: #000 !important;
     border-color: #444 !important;
   }
-  
   .high-contrast .mw-body h1,
   .high-contrast .mw-body h2,
   .high-contrast .mw-body h3,
@@ -32,33 +28,25 @@
   /* Dyslexia-friendly font */
   .dyslexia-mode {
     font-family: "Comic Sans MS", "OpenDyslexic", sans-serif !important;
-    font-weight: normal !important;
     line-height: 1.8 !important;
     word-spacing: 2px !important;
   }
-  
-  /* Only bold the first half of words */
   .dyslexia-mode .first-half-text {
     font-weight: bold !important;
     background-color: transparent !important;
   }
-  
-  /* Ensure the rest of the text is normal weight */
   .dyslexia-mode *:not(.first-half-text) {
     font-weight: normal !important;
   }
   
-  /* Focus styles for keyboard navigation */
+  /* Keyboard focus outline */
   :focus {
     outline: 3px solid #500000 !important;
     outline-offset: 2px !important;
   }
   
-  /* Ensure text scaling works on form elements */
-  input, 
-  textarea, 
-  select, 
-  button {
+  /* Ensure text scaling on inputs */
+  input, textarea, select, button {
     font-size: inherit !important;
   }
   
@@ -68,22 +56,20 @@
     font-size: initial !important;
   }
   
-  /* Wikipedia-specific styles for better accessibility */
+  /* Wikipedia-specific line-height tweaks */
   .dyslexia-mode .infobox,
   .dyslexia-mode .wikitable {
     line-height: 1.6 !important;
   }
-  
   .dyslexia-mode .reference,
   .dyslexia-mode sup {
     font-size: 0.85em !important;
   }
-  
   .dyslexia-mode #mw-panel .portal li {
     margin-bottom: 5px !important;
   }
   
-  /* Color blindness simulation filters applied on html & body */
+  /* Color-blindness filters */
   html.color-blind-protanopia,
   body.color-blind-protanopia {
     filter: url(#protanopia-filter) !important;
@@ -95,5 +81,10 @@
   html.color-blind-tritanopia,
   body.color-blind-tritanopia {
     filter: url(#tritanopia-filter) !important;
+  }
+  
+  /* Highlight for line-focus */
+  .focused-line {
+    background-color: rgba(255, 255, 0, 0.3) !important;
   }
   

@@ -3,168 +3,87 @@
 <head>
   <style>
     :root {
-      --primary-color: #500000; /* Texas A&M maroon */
+      --primary-color: #500000;
       --primary-hover: #400000;
       --secondary-color: #f0f0f0;
       --text-color: #333;
       --border-color: #ddd;
-      --success-color: #28a745;
     }
-    
     body {
       width: 280px;
-      padding: 0;
-      margin: 0;
-      font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      margin: 0; padding: 0;
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
       color: var(--text-color);
-      background-color: white;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      background: white;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
-    
     .header {
-      background-color: var(--primary-color);
+      background: var(--primary-color);
       color: white;
       padding: 15px;
-      margin-bottom: 10px;
-    }
-    
-    h3 {
-      margin: 0;
-      font-size: 16px;
-      font-weight: 600;
       text-align: center;
     }
-    
+    h3 { margin: 0; font-size: 16px; font-weight: 600; }
     .control-group {
       padding: 0 15px 15px;
-      margin-bottom: 10px;
       border-bottom: 1px solid var(--border-color);
     }
-    
-    .control-group:last-child {
-      border-bottom: none;
-      margin-bottom: 0;
-    }
-    
+    .control-group:last-child { border-bottom: none; }
     h4 {
-      margin: 0 0 10px 0;
+      margin: 10px 0 5px;
       font-size: 14px;
-      font-weight: 500;
       color: var(--primary-color);
+      font-weight: 500;
     }
-    
     button {
+      width: 100%;
       padding: 8px 12px;
-      margin: 3px 0;
-      cursor: pointer;
+      margin: 4px 0;
       background: var(--primary-color);
       color: white;
       border: none;
       border-radius: 4px;
       font-size: 13px;
-      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button:hover { background: var(--primary-hover); transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+    select, input[type="color"] {
       width: 100%;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      padding: 6px;
+      margin: 4px 0;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      box-sizing: border-box;
     }
-    
-    button:hover {
-      background: var(--primary-hover);
-      transform: translateY(-1px);
-    }
-    
-    button:active {
-      transform: translateY(0);
-    }
-    
-    .size-controls {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin: 10px 0;
-    }
-    
-    .size-btn {
-      flex: 1;
-      width: auto;
-      padding: 6px 0;
-    }
-    
-    #sizeDisplay {
-      font-weight: bold;
-      min-width: 40px;
-      text-align: center;
-      font-size: 14px;
-    }
-    
-    /* Remove the margin-right from icons to center text properly */
-    .icon {
-      font-size: 14px;
-    }
-    
-    /* Only add margin if the icon actually has content */
-    .icon:not(:empty) {
-      margin-right: 8px;
-    }
-    
     .footer {
       padding: 10px 15px;
       font-size: 11px;
       color: #666;
+      background: var(--secondary-color);
       text-align: center;
-      background-color: var(--secondary-color);
-    }
-    
-    /* Style for the new select & color inputs */
-    #colorFilterSelect {
-      width: 100%;
-      padding: 8px;
-      border-radius: 4px;
-      border: 1px solid var(--border-color);
-      margin-top: 5px;
-    }
-    .color-input {
-      width: 100%;
-      height: 30px;
-      border: none;
-      padding: 0;
-      margin: 5px 0;
     }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h3>Texas A&M Accessibility Tools</h3>
-  </div>
-  
+  <div class="header"><h3>Accessibility Tools</h3></div>
+
   <div class="control-group">
     <h4>Text Size</h4>
-    <div class="size-controls">
-
-      <button id="decreaseText" class="size-btn">Decrease</button>
-      <span id="sizeDisplay">100%</span>
-      <button id="increaseText" class="size-btn">Increase</button>
-
+    <div style="display:flex; gap:10px; align-items:center;">
+      <button id="decreaseText" style="flex:1;">Decrease</button>
+      <span id="sizeDisplay" style="flex:0 0 40px; text-align:center; font-weight:bold;">100%</span>
+      <button id="increaseText" style="flex:1;">Increase</button>
     </div>
   </div>
-  
+
   <div class="control-group">
     <h4>Display Options</h4>
-
-    <button id="toggleContrast">
-      Toggle Contrast
-    </button>
-    <button id="toggleDyslexia">
-      Dyslexia Mode
-    </button>
-    <button id="toggleWikiControls">
-      Turn on Focus Mode
-    </button>
+    <button id="toggleContrast">Toggle Contrast</button>
+    <button id="toggleDyslexia">Dyslexia Mode</button>
   </div>
 
-  <!-- New Color Filters -->
   <div class="control-group">
     <h4>Color Filters</h4>
     <select id="colorFilterSelect">
@@ -175,27 +94,38 @@
     </select>
   </div>
 
-  <!-- New Custom Colors -->
   <div class="control-group">
     <h4>Custom Colors</h4>
-    <label for="textColorInput">Text Color:</label>
-    <input type="color" id="textColorInput" class="color-input" value="#000000">
-    <label for="bgColorInput">Background Color:</label>
-    <input type="color" id="bgColorInput" class="color-input" value="#FFFFFF">
+    <label>Text Color:</label>
+    <input type="color" id="textColorInput" value="#000000">
+    <label>Background:</label>
+    <input type="color" id="bgColorInput" value="#ffffff">
     <button id="applyColors">Apply Colors</button>
-    <button id="resetColors" style="background-color: #666;">Reset Colors</button>
+    <button id="resetColors" style="background:#666;">Reset Colors</button>
   </div>
 
   <div class="control-group">
-
-    <button id="resetAll" style="background-color: #666;">Reset All</button>
-
+    <h4>Reading Aid</h4>
+    <select id="lineFocusSelect">
+      <option value="off">Off</option>
+      <option value="on">Line Focus On</option>
+    </select>
   </div>
-  
-  <div class="footer">
-    Texas A&M University Accessibility Tool
+
+
+  <div class="control-group">
+    <h4>Text-to-Speech Controls</h4>
+    <button id="read-button" class="popup-button">Start Reading Page</button>
+    <button id="pause-button" style="background:#666;" class="popup-button">Pause</button>
+    <button id="resume-button" style="background:#666;" class="popup-button">Resume</button>
+    <button id="stop-button" style="background:#666;" class="popup-button">Stop</button>
   </div>
-  
+
+  <div class="control-group">
+    <button id="resetAll" style="background:#666;">Reset All</button>
+  </div>
+
+  <div class="footer">Accessibility Enhancer</div>
   <script src="popup.js"></script>
 </body>
 </html>
