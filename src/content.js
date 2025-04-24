@@ -302,5 +302,36 @@ function clearHighlight() {
     prevHighlighted = null;
   }
 }
+// Text-to-Speech: Read the main content of the page
+function readMainContent() {
+  const mainContent = document.querySelector('main') || document.body;
+  const textToRead = mainContent.innerText || "Sorry, there's no readable content on this page.";
+
+  const utterance = new SpeechSynthesisUtterance(textToRead);
+  utterance.lang = 'en-US';
+  utterance.rate = 1; // Adjust rate if needed
+  utterance.pitch = 1;
+
+  speechSynthesis.speak(utterance);
+}
+
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'read_text') {
+    readMainContent();
+  } else if (request.action === 'pause_speech') {
+    if (speechSynthesis.speaking && !speechSynthesis.paused) {
+      speechSynthesis.pause();
+    }
+  } else if (request.action === 'resume_speech') {
+    if (speechSynthesis.paused) {
+      speechSynthesis.resume();
+    }
+  } else if (request.action === 'stop_speech') {
+    if (speechSynthesis.speaking) {
+      speechSynthesis.cancel();
+    }
+  }
+});
 
 console.log('Texas A&M Wikipedia accessibility enhancer loaded');
