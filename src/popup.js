@@ -71,18 +71,25 @@ document.addEventListener('DOMContentLoaded', () => {
     await sendCmd(on ? 'enableLineFocus' : 'disableLineFocus');
   });
 
-  // Text-to-Speech controls
-  document.getElementById('read-button').addEventListener('click', () => {
+  document.getElementById('read-button')?.addEventListener('click', () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       chrome.tabs.sendMessage(tabs[0].id, { action: 'read_text' });
     });
   });
-  document.getElementById('pause-button').addEventListener('click', () => {
+  
+  document.getElementById('pause-button')?.addEventListener('click', () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       chrome.tabs.sendMessage(tabs[0].id, { action: 'pause_speech' });
     });
   });
-  document.getElementById('stop-button').addEventListener('click', () => {
+  
+  document.getElementById('resume-button')?.addEventListener('click', () => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chrome.tabs.sendMessage(tabs[0].id, { action: 'resume_speech' });
+    });
+  });
+  
+  document.getElementById('stop-button')?.addEventListener('click', () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       chrome.tabs.sendMessage(tabs[0].id, { action: 'stop_speech' });
     });
