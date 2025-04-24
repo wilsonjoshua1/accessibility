@@ -88,3 +88,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('toggleContrast').addEventListener('click', () => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chrome.scripting.executeScript({
+        target: { tabId: tabs[0].id },
+        func: togglePageContrast
+      });
+    });
+  });
+
+  function togglePageContrast() {
+    const body = document.body;
+    const isDark = body.classList.contains('high-contrast');
+
+    if (isDark) {
+      body.classList.remove('high-contrast');
+      body.style.backgroundColor = '';
+      body.style.color = '';
+    } else {
+      body.classList.add('high-contrast');
+      body.style.backgroundColor = 'black';
+      body.style.color = 'white';
+    }
+  }
+});
