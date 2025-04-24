@@ -12,9 +12,6 @@ let prevHighlighted = null;
 // Inject SVG filters immediately
 ensureSVGFilters();
 
-// Apply stored preferences for wiki controls on load
-applyStoredPreferences();
-
 chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
   try {
     switch (req.action) {
@@ -46,11 +43,6 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
         resetColorFilter();
         return sendResponse({ success: true });
 
-      case 'toggleWikiControls': {
-        const hidden = toggleWikiControls();
-        return sendResponse({ success: true, isHidden: hidden });
-      }
-
       case 'setCustomColors':
         applyCustomColors(req.textColor, req.bgColor);
         return sendResponse({ success: true });
@@ -72,11 +64,7 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
         return sendResponse({ success: true });
 
       case 'getState':
-        return sendResponse({
-          success: true,
-          size: currentFontSize,
-          wikiControlsHidden: localStorage.getItem('tamWikiHideControls') === 'true'
-        });
+        return sendResponse({ success: true, size: currentFontSize });
 
       default:
         return sendResponse({ success: false, error: 'Unknown action' });
