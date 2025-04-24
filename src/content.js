@@ -248,8 +248,8 @@ function resetStyles() {
   unboldText();
 
   // Show wiki controls again
-  toggleWikiControls(); // toggles off if was on
-  localStorage.removeItem('tamWikiHideControls');
+  localStorage.setItem('tamWikiHideControls', 'true');
+  toggleWikiControls(); 
 }
 
 // --- Apply stored wiki-controls preference ---
