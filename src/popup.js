@@ -19,86 +19,55 @@ document.addEventListener('DOMContentLoaded', () => {
     resetAll: { action: 'resetAll' }
   };
 
-  async function updateButtonStates() {
-    try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-      if (!tab.url.includes('en.wikipedia.org/wiki/Texas_A%26M_University')) return;
-
-      const response = await sendCmd('getState');
-      if (response?.success) {
-        const wikiButton = document.getElementById('toggleWikiControls');
-        if (wikiButton) {
-          wikiButton.textContent = response.wikiControlsHidden
-            ? 'Turn off Focus Mode'
-            : 'Turn on Focus Mode';
-        }
-
-        const sizeDisplay = document.getElementById('sizeDisplay');
-        if (sizeDisplay) {
-          sizeDisplay.textContent = `${Math.round(response.size * 100)}%`;
-        }
+  // Initialize states (text size & wiki controls label)
+  (async function init() {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab.url.includes('en.wikipedia.org/wiki/Texas_A%26M_University')) return;
+    const res = await sendCmd('getState');
+    if (res?.success) {
+      document.getElementById('sizeDisplay').textContent = `${Math.round(res.size * 100)}%`;
+      const wikiBtn = document.getElementById('toggleWikiControls');
+      if (wikiBtn) {
+        wikiBtn.textContent = res.wikiControlsHidden ? 'Turn off Focus Mode' : 'Turn on Focus Mode';
       }
-    } catch (error) {
-      console.log('Content script not ready yet:', error);
     }
-  }
+  })();
 
-  Object.entries(buttons).forEach(([id, config]) => {
-    const button = document.getElementById(id);
-    if (!button) return;
+  Object.entries(buttons).forEach(([id, cfg]) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
 
-    button.addEventListener('click', async () => {
+    btn.addEventListener('click', async () => {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
       if (!tab.url.includes('en.wikipedia.org/wiki/Texas_A%26M_University')) {
         alert('Please use this on the Texas A&M University Wikipedia page');
         return;
       }
 
-      const response = await sendCmd(config.action);
-      if (response?.success) {
-        if (config.display) {
-          config.display.textContent = `${Math.round(response.size * 100)}%`;
+      const res = await sendCmd(cfg.action);
+      if (res?.success) {
+        if (cfg.display && res.size != null) {
+          cfg.display.textContent = `${Math.round(res.size * 100)}%`;
         }
-        if (config.action === 'toggleWikiControls') {
-          button.textContent = response.isHidden
-            ? 'Turn off Focus Mode'
-            : 'Turn on Focus Mode';
+        if (cfg.action === 'toggleWikiControls') {
+          btn.textContent = res.isHidden ? 'Turn off Focus Mode' : 'Turn on Focus Mode';
         }
         if (id === 'resetAll') {
-          const lineSelect = document.getElementById('lineFocusSelect');
-          if (lineSelect) lineSelect.value = 'off';
+          // also reset Reading Aid dropdown
+          const lf = document.getElementById('lineFocusSelect');
+          if (lf) lf.value = 'off';
         }
       }
     });
   });
 
-  // Initialize button states
-  updateButtonStates();
-
-  // Color filter select
-  const colorFilterSelect = document.getElementById('colorFilterSelect');
-  if (colorFilterSelect) {
-    colorFilterSelect.addEventListener('change', async () => {
-      const filter = colorFilterSelect.value;
-      const action = filter === 'none' ? 'resetColorFilter' : 'setColorFilter';
-      const response = await sendCmd(action, { filter });
-      if (!response?.success) {
-        alert('Failed to apply color filter. Please refresh the page and try again.');
-      }
-    });
-  }
-});
-
-
-  // Color filter
+  // Color Filters
   document.getElementById('colorFilterSelect').addEventListener('change', async e => {
     const filter = e.target.value;
-    await sendCmd(filter==='none'?'resetColorFilter':'setColorFilter', { filter });
+    await sendCmd(filter === 'none' ? 'resetColorFilter' : 'setColorFilter', { filter });
   });
 
-  // Custom colors
+  // Custom Colors
   document.getElementById('applyColors').addEventListener('click', async () => {
     const textColor = document.getElementById('textColorInput').value;
     const bgColor = document.getElementById('bgColorInput').value;
@@ -108,8 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
     await sendCmd('resetCustomColors');
   });
 
-
-  // **New** Line Focus toggle
+  // Line Focus toggle
   document.getElementById('lineFocusSelect').addEventListener('change', async e => {
     const on = e.target.value === 'on';
     await sendCmd(on ? 'enableLineFocus' : 'disableLineFocus');

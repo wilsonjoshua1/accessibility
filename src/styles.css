@@ -3,22 +3,18 @@
     background-color: #000 !important;
     color: #fff !important;
   }
-  
   .high-contrast a {
     color: #3390ff !important;
     text-decoration: underline !important;
   }
-  
   .high-contrast #mw-head,
   .high-contrast #mw-panel {
     background-color: #222 !important;
   }
-  
   .high-contrast .mw-body {
     background-color: #000 !important;
     border-color: #444 !important;
   }
-  
   .high-contrast .mw-body h1,
   .high-contrast .mw-body h2,
   .high-contrast .mw-body h3,
@@ -32,27 +28,24 @@
   /* Dyslexia-friendly font */
   .dyslexia-mode {
     font-family: "Comic Sans MS", "OpenDyslexic", sans-serif !important;
-    font-weight: normal !important;
     line-height: 1.8 !important;
     word-spacing: 2px !important;
   }
-  
   .dyslexia-mode .first-half-text {
     font-weight: bold !important;
     background-color: transparent !important;
   }
-  
   .dyslexia-mode *:not(.first-half-text) {
     font-weight: normal !important;
   }
   
-  /* Focus styles for keyboard navigation */
+  /* Keyboard focus outline */
   :focus {
     outline: 3px solid #500000 !important;
     outline-offset: 2px !important;
   }
   
-  /* Ensure text scaling works on form elements */
+  /* Ensure text scaling on inputs */
   input, textarea, select, button {
     font-size: inherit !important;
   }
@@ -63,22 +56,20 @@
     font-size: initial !important;
   }
   
-  /* Wikipedia-specific styles for better accessibility */
+  /* Wikipedia-specific line-height tweaks */
   .dyslexia-mode .infobox,
   .dyslexia-mode .wikitable {
     line-height: 1.6 !important;
   }
-  
   .dyslexia-mode .reference,
   .dyslexia-mode sup {
     font-size: 0.85em !important;
   }
-  
   .dyslexia-mode #mw-panel .portal li {
     margin-bottom: 5px !important;
   }
   
-  /* Color-blindness filters on html & body */
+  /* Color-blindness filters */
   html.color-blind-protanopia,
   body.color-blind-protanopia {
     filter: url(#protanopia-filter) !important;
